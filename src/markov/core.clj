@@ -13,6 +13,22 @@
   (str/replace sentence #"\"" "") 
   )
 
+(defn gen-ngram 
+  ([sentence n]
+   (gen-ngram sentence n [])
+   )
+
+  ([sentence n acc]
+   (if-let [s (seq sentence)]
+      (recur (rest sentence) n (conj sentence (take n s))) 
+      acc
+     ) 
+   ))
+
+(defn print-document [doc]
+      (doseq [sentence doc] (println sentence)))
+  
+
 (defn get-corpus [corpus-name]   
    (let [session (client/connect ["127.0.0.1"] {:keyspace "markov" :protocol-version 2})]
       (println "Get Corpus : Connected to 127.0.0.1 - " corpus-name) 
@@ -23,8 +39,9 @@
   "I don't do a whole lot ... yet."
   [& args]
       (def results (get-corpus "treasure_island"))
+      (def document (map de-quote (map :sentence_text results)))
       (println (str "Result size : " (count results)))
- ;     (doseq [sentence results] (println  (de-quote (:sentence_text sentence))))
+;      (print-document document)
      )
     
 
