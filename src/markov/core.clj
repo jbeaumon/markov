@@ -6,28 +6,26 @@
              [clojurewerkz.cassaforte.query :as q]))
            
 (defn print-first [sentence-seq]
-  (doseq [s sentence-seq] (println (first (str/split (:sentence_text s) #" "))))
-  )
+  (doseq [s sentence-seq] (println (first (str/split (:sentence_text s) #" ")))))
 
 (defn de-quote [sentence]
-  (str/replace sentence #"\"" "") 
-  )
+  (str/replace sentence #"\"" "")) 
+
+(defn make-word-seq [sentence]
+  (re-seq #"\w+" sentence))
 
 (defn gen-ngram 
   ([sentence n]
-   (gen-ngram sentence n [])
-   )
+   (gen-ngram sentence n []))
 
   ([sentence n acc]
    (if-let [s (seq sentence)]
-      (recur (rest sentence) n (conj sentence (take n s))) 
+      (recur (rest sentence) n (conj acc (take n s))) 
       acc
-     ) 
-   ))
+     ))) 
 
 (defn print-document [doc]
       (doseq [sentence doc] (println sentence)))
-  
 
 (defn get-corpus [corpus-name]   
    (let [session (client/connect ["127.0.0.1"] {:keyspace "markov" :protocol-version 2})]
@@ -39,9 +37,11 @@
   "I don't do a whole lot ... yet."
   [& args]
       (def results (get-corpus "treasure_island"))
-      (def document (map de-quote (map :sentence_text results)))
+      (def document (map make-word-seq (map de-quote (map :sentence_text results))))
       (println (str "Result size : " (count results)))
 ;      (print-document document)
+      (println (first document))
+      (def tri-grams (gen-ngram (first document) 3))
+      (print tri-grams)
      )
     
-
