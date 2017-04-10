@@ -11,8 +11,18 @@
 (defn de-quote [sentence]
   (str/replace sentence #"\"" "")) 
 
+(defn prep-sentence [sentence]
+  (str "START " (str/replace sentence #"\"" "") " END")) 
+
 (defn make-word-seq [sentence]
-  (re-seq #"\w+" sentence))
+   (re-seq #"\w+" sentence))
+
+(defn hash-ngram [ngram]
+  {:root (first ngram) :words (rest ngram)}) 
+
+(defn make-ngram-hash [ngrams]
+  (let [])
+  )
 
 (defn gen-ngram 
   ([sentence n]
@@ -37,11 +47,17 @@
   "I don't do a whole lot ... yet."
   [& args]
       (def results (get-corpus "treasure_island"))
-      (def document (map make-word-seq (map de-quote (map :sentence_text results))))
+      ;(def document (map make-word-seq (map de-quote (map :sentence_text results))))
+      (def document (map make-word-seq (map prep-sentence (map :sentence_text results))))
       (println (str "Result size : " (count results)))
 ;      (print-document document)
       (println (first document))
       (def tri-grams (gen-ngram (first document) 3))
-      (print tri-grams)
+      ;(def tri-grams (doseq [doc document] (gen-ngram doc 3)))
+      (def hashed-ngrams (map hash-ngram tri-grams))
+      ;(def hashed-ngrams (doseq [t tri-grams] (map hash-ngram t)))
+      (println hashed-ngrams)
+      (def start (filter #(= "START" (:root %)) hashed-ngrams))
+      (println start)
      )
     
