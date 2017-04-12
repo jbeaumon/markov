@@ -24,6 +24,10 @@
   (let [])
   )
 
+(defn gen-trigram [sentence]
+  (gen-ngram sentence 3)
+  )
+
 (defn gen-ngram 
   ([sentence n]
    (gen-ngram sentence n []))
@@ -50,14 +54,17 @@
       ;(def document (map make-word-seq (map de-quote (map :sentence_text results))))
       (def document (map make-word-seq (map prep-sentence (map :sentence_text results))))
       (println (str "Result size : " (count results)))
-;      (print-document document)
+      (println (str "Document size : " (count document)))
       (println (first document))
       (def tri-grams (gen-ngram (first document) 3))
-      ;(def tri-grams (doseq [doc document] (gen-ngram doc 3)))
-      (def hashed-ngrams (map hash-ngram tri-grams))
-      ;(def hashed-ngrams (doseq [t tri-grams] (map hash-ngram t)))
-      (println hashed-ngrams)
-      (def start (filter #(= "START" (:root %)) hashed-ngrams))
-      (println start)
+      (def trigrams (map gen-trigram document))
+      (println (str "Trigram size : " (count trigrams)))
+      (def hashed-ngrams (map hash-ngram trigrams))
+      (println (str "Hashed-ngram size : " (count hashed-ngrams)))
+      (println (last hashed-ngrams))
+;      (println hashed-ngrams)
+
+;      (def start (filter #(= "START" (:root %)) hashed-ngrams))
+;      (println start)
      )
     
