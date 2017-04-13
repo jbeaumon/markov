@@ -20,10 +20,6 @@
 (defn hash-ngram [ngram]
   {:root (take 2 ngram) :next-word (last ngram)}) 
 
-(defn make-ngram-hash [ngrams]
-  (let [])
-  )
-
 (defn gen-trigram [sentence]
   (gen-ngram sentence 3)
   )
@@ -46,6 +42,42 @@
       (println "Get Corpus : Connected to 127.0.0.1 - " corpus-name) 
       (cql/select session "corpus" (where [[= :corpus_name corpus-name]]) (allow-filtering))
      ))
+
+(defn generate-corpus-trigrams [corpus-name]
+  (let [corpus-results (get-corpus corpus-name)
+        document (map make-word-seq (map prep-sentence (map :sentence_text corpus-results)))
+        trigrams (mapcat gen-trigram document)
+        ])
+
+       (map hash-ngram trigrams)
+  )
+
+(defn generate-sentence [hashed-trigrams]
+  (let [starters (filter #(= "START" (first (:root %))) hashed-trigrams)
+        starter-idx (rand-int (count starters))
+        sentence-pieces (filter #(not= "START" (first (:root %))) hashed-trigrams) 
+        starter (nth starters starter-idx) 
+;        dummy (println starter)
+        root (second (:root starter))
+        sentence (seq [root (:next-word starter)])
+        ]
+    (loop [s sentence, prev-two sentence]
+      (let [next-choices (filter #(= prev-two (:root %)) sentence-pieces)
+            next-word (:next-word (nth next-choices (rand-int (count next-choices))))
+            next-prev (seq [(last s) next-word])
+;            dummy2 (println "Sent : " s)
+;            dummy3 (println "Prev : " prev-two)
+            ]
+
+        (if (= (last s) "END")
+          (str/join " "(butlast (flatten s))) 
+          (recur (seq [s next-word]) next-prev)
+;          (recur (conj (seq next-word) s) next-prev)
+          )
+        )
+      )
+    )
+  )
   
 (defn -main
   "I don't do a whole lot ... yet."
@@ -65,6 +97,6 @@
       (def starters (filter #(= "START" (first (:root %))) hashed-trigrams))
       (def sentence-pieces (filter #(not= "START" (first (:root %))) hashed-trigrams))
 ;      (print-document start)
-      (print-document sentence-pieces)
+;      (print-document sentence-pieces)
      )
     
