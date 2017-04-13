@@ -18,7 +18,7 @@
    (re-seq #"\w+" sentence))
 
 (defn hash-ngram [ngram]
-  {:root (first ngram) :words (rest ngram)}) 
+  {:root (take 2 ngram) :next-word (last ngram)}) 
 
 (defn make-ngram-hash [ngrams]
   (let [])
@@ -50,21 +50,21 @@
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
+      ;Pull data from DB.
       (def results (get-corpus "treasure_island"))
-      ;(def document (map make-word-seq (map de-quote (map :sentence_text results))))
+      ;Strip out punctuation and make each sentence a seq of words
       (def document (map make-word-seq (map prep-sentence (map :sentence_text results))))
-      (println (str "Result size : " (count results)))
       (println (str "Document size : " (count document)))
-      (println (first document))
-      (def tri-grams (gen-ngram (first document) 3))
-      (def trigrams (map gen-trigram document))
-      (println (str "Trigram size : " (count trigrams)))
-      (def hashed-ngrams (map hash-ngram trigrams))
-      (println (str "Hashed-ngram size : " (count hashed-ngrams)))
-      (println (last hashed-ngrams))
-;      (println hashed-ngrams)
 
-;      (def start (filter #(= "START" (:root %)) hashed-ngrams))
-;      (println start)
+      ;generate trigrams ( a two word :root followed by a :next-word)
+      (def trigrams (mapcat gen-trigram document))
+      (def hashed-trigrams (map hash-ngram trigrams))
+;      (print-document hashed-trigrams)
+
+      ;Filter sentence starters and continuation possibilities
+      (def starters (filter #(= "START" (first (:root %))) hashed-trigrams))
+      (def sentence-pieces (filter #(not= "START" (first (:root %))) hashed-trigrams))
+;      (print-document start)
+      (print-document sentence-pieces)
      )
     
