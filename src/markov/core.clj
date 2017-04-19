@@ -17,8 +17,11 @@
   "Split a sentence into a seq of words"
    (re-seq #"\w+" sentence))
 
-(defn hash-ngram [ngram]
-  {:root (take 2 ngram) :next-word (last ngram)}) 
+(defn hash-ngram [n ngram]
+  {:n n :root (take (dec n) ngram) :next-word (last ngram)}) 
+
+(defn hash-trigram [ngram]
+  (hash-ngram 3 ngram))
 
 (defn gen-ngram 
   "split a sentence into groups of 'n' "
@@ -52,21 +55,49 @@
         trigrams (mapcat gen-trigram document)
         ]
     
-       (map hash-ngram trigrams)
+       (map hash-trigram trigrams)
+    )
+  )
+
+(defn weight-transitions [next-choices]
+  (let [
+        unique-transitions (distinct next-choices)
+        ]
+      (loop [u unique-transitions, w ()]
+        (let [
+              current-trans (first u)
+              transition-ct (count (filter #(= (:next-word current-trans) (:next-word  %)) next-choices))
+              weighted-transition {:root (:root current-trans) :next-word (:next-word current-trans) :weight transition-ct :n (:n current-trans)}
+;              dummy (println "WT : " w)
+              ]
+          (if (empty? u)
+            w
+            (recur (rest u) (conj w weighted-transition))
+            )
+          )
+        )
     )
   )
 
 (defn generate-sentence [hashed-trigrams]
   "Use a set of tri-grams to generate a  "
-  (let [starters (filter #(= "START" (first (:root %))) hashed-trigrams)
+  (let [;Filter sentence starting ngrams
+        starters (filter #(= "START" (first (:root %))) hashed-trigrams)
         starter-idx (rand-int (count starters))
+        ;Fileter sentence continuations
         sentence-pieces (filter #(not= "START" (first (:root %))) hashed-trigrams) 
+        ;choose a random starter
         starter (nth starters starter-idx) 
+        ;take the word after the START tag
         root (second (:root starter))
+        ;take the  word following the root to begin the sentence
         sentence (seq [root (:next-word starter)])
         ]
     (loop [s sentence, prev-two sentence]
       (let [next-choices (filter #(= prev-two (:root %)) sentence-pieces)
+;            dummy (println "NC : " next-choices)
+            weighted-choices (weight-transitions next-choices)
+            dummy (println "Weighted Choices : " weighted-choices)
             next-word (:next-word (nth next-choices (rand-int (count next-choices))))
             next-prev (seq [(last s) next-word])
             ]
@@ -84,6 +115,6 @@
   "I don't do a whole lot ... yet."
   [& args]
   (def shakespeare  (generate-corpus-trigrams "shakespeare_complete"))
-  (generate-sentence shakespeare)
+  (println (generate-sentence shakespeare))
      )
     
