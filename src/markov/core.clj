@@ -3,6 +3,7 @@
   (:require  [clojurewerkz.cassaforte.client :as client]
              [clojurewerkz.cassaforte.cql    :as cql :refer :all]
              [clojure.string :as str]
+             [clojure.math.numeric-tower :as math]
              [clojurewerkz.cassaforte.query :as q]))
 
 (defn de-quote [sentence]
@@ -67,8 +68,10 @@
         (let [
               current-trans (first u)
               transition-ct (count (filter #(= (:next-word current-trans) (:next-word  %)) next-choices))
-              weighted-transition {:root (:root current-trans) :next-word (:next-word current-trans) :weight transition-ct :n (:n current-trans)}
-;              dummy (println "WT : " w)
+              ; create a record that includes the number of occurrences of the transition and a weghted float.
+              ; uses the square root of the total count to add realistic weights without cutting the sentences too short.
+              weighted-transition {:root (:root current-trans) :next-word (:next-word current-trans) 
+                                   :num-occurrences transition-ct :weight (* (math/sqrt transition-ct) (rand)) :n (:n current-trans)}
               ]
           (if (empty? u)
             w
@@ -78,6 +81,8 @@
         )
     )
   )
+
+
 
 (defn generate-sentence [hashed-trigrams]
   "Use a set of tri-grams to generate a  "
@@ -97,8 +102,10 @@
       (let [next-choices (filter #(= prev-two (:root %)) sentence-pieces)
 ;            dummy (println "NC : " next-choices)
             weighted-choices (weight-transitions next-choices)
-            dummy (println "Weighted Choices : " weighted-choices)
-            next-word (:next-word (nth next-choices (rand-int (count next-choices))))
+            sorted-choices (sort-by :weight weighted-choices)
+            selected-choice (last sorted-choices)
+            ;next-word (:next-word (nth next-choices (rand-int (count next-choices))))
+            next-word (:next-word selected-choice)
             next-prev (seq [(last s) next-word])
             ]
 
